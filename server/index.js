@@ -3,8 +3,11 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const { Pool } = require('pg');
+const fs = require('fs');
 const app = express();
 const port = 3000;
+
+const IMAGES_DIR = path.join(__dirname, 'images_storage');
 
 app.use(cors());
 app.use(express.json());
@@ -21,7 +24,7 @@ const pool = new Pool({
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'images_storage/');
+    cb(null, IMAGES_DIR);
   },
   filename: function (req, file, cb) {
     file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
@@ -84,6 +87,31 @@ app.post('/api/upload', upload.array('images'), (req, res) => {
   }
 });
 
+app.use('/uploads', express.static(IMAGES_DIR));
+
+app.get('/api/images', (req, res) => {
+
+  fs.readdir(IMAGES_DIR, (err, files) => {
+    if (err) {
+      return res.status(500).json({ error: 'Unable to scan files' });
+    }
+
+    const imageFiles = files.filter(file =>
+      /\.(jpg|jpeg|png|tif|tiff)$/i.test(file)
+    );
+
+    const response = imageFiles.map(file => {
+      const isTif = /\.(tif|tiff)$/i.test(file);
+      return {
+        name: file,
+        url: `http://localhost:3000/uploads/${file}`,
+        type: isTif ? 'tif' : 'standard'
+      };
+    });
+
+    res.json(response);
+  });
+});
 
 
 app.listen(port, () => {
