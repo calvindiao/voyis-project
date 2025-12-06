@@ -1,6 +1,7 @@
-// server/index.js
 const express = require('express');
 const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
 const { Pool } = require('pg');
 const app = express();
 const port = 3000;
@@ -8,7 +9,7 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
-// 数据库连接配置
+// db configuration
 const pool = new Pool({
   user: 'admin',
   host: 'localhost',
@@ -17,7 +18,36 @@ const pool = new Pool({
   port: 5432,
 });
 
-// 测试接口：检查服务器状态
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'images_storage/');
+  },
+  filename: function (req, file, cb) {
+    file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    cb(null, file.originalname);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|tif|tiff/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype);
+
+  if (extname && mimetype) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only images (JPG, PNG, TIF) are allowed!'));
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter
+});
+
+
+// Test check database connection
 app.get('/api/status', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');
@@ -29,6 +59,32 @@ app.get('/api/status', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+
+app.post('/api/upload', upload.array('images'), (req, res) => {
+  try {
+    const files = req.files;
+
+    if (!files || files.length === 0) {
+      return res.status(400).send('No files uploaded.');
+    }
+
+    // Calculate statistics
+    const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+
+    res.json({
+      message: 'Upload successful!',
+      totalFiles: files.length,
+      totalSize: (totalSize / 1024 / 1024).toFixed(2) + ' MB', // Convert to MB
+      fileList: files.map(f => f.filename)
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 
 app.listen(port, () => {
   console.log(`API Server listening at http://localhost:${port}`);
