@@ -248,6 +248,8 @@ app.post('/api/crop', async (req, res) => {
       })
       .toFile(newPath);
 
+    // const metadata = await sharp(newPath).metadata();
+    const fileStats = fs.statSync(newPath);
     const metadata = await sharp(newPath).metadata();
 
     // database insert
@@ -261,7 +263,7 @@ app.post('/api/crop', async (req, res) => {
       newFilename,
       newPath,
       `image/${metadata.format}`, // Simplified mimetype
-      metadata.size,
+      fileStats.size,
       metadata.width,
       metadata.height,
       false
