@@ -3,6 +3,8 @@ const cors = require('cors');
 const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
+const archiver = require('archiver');
+const fs = require('fs');
 const { Pool } = require('pg');
 const app = express();
 const port = 3000;
@@ -188,34 +190,40 @@ app.post('/api/upload', upload.array('images'), async (req, res) => {
 });
 
 
-
-
 app.use('/uploads', express.static(IMAGES_DIR));
 
-// app.get('/api/images', (req, res) => {
+app.get('/api/download-zip', (req, res) => {
+  const filesParam = req.query.files; // Frontend parameter format: ?files=img1.jpg,img2.png
 
-//   fs.readdir(IMAGES_DIR, (err, files) => {
-//     if (err) {
-//       return res.status(500).json({ error: 'Unable to scan files' });
-//     }
+  if (!filesParam) {
+    return res.status(400).send('No files specified');
+  }
 
-//     const imageFiles = files.filter(file =>
-//       /\.(jpg|jpeg|png|tif|tiff)$/i.test(file)
-//     );
+  const fileList = filesParam.split(',');
 
-//     const response = imageFiles.map(file => {
-//       const isTif = /\.(tif|tiff)$/i.test(file);
-//       return {
-//         name: file,
-//         url: `http://localhost:3000/uploads/${file}`,
-//         type: isTif ? 'tif' : 'standard'
-//       };
-//     });
+  res.attachment('images.zip');
 
-//     res.json(response);
-//   });
-// });
+  const archive = archiver('zip', {
+    zlib: { level: 9 }
+  });
 
+  archive.on('error', (err) => {
+    res.status(500).send({ error: err.message });
+  });
+
+  // Pipe the archive stream to the response stream
+  archive.pipe(res);
+
+  fileList.forEach(filename => {
+    const filePath = path.join(IMAGES_DIR, filename);
+    if (fs.existsSync(filePath)) {
+      archive.file(filePath, { name: filename });
+    } else {
+      console.warn(`File not found during zip: ${filename}`);
+    }
+  });
+  archive.finalize();
+});
 
 app.listen(port, () => {
   console.log(`API Server listening at http://localhost:${port}`);

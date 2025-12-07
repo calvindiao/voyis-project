@@ -1,11 +1,16 @@
-import { useState , useEffect} from 'react'
+import { useState, useEffect } from 'react'
 
 function App() {
   const [uploadStatus, setUploadStatus] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
   const [images, setImages] = useState([])
 
-const fetchImages = async () => {
+
+  const [filterType, setFilterType] = useState('all')
+  const [selectedImages, setSelectedImages] = useState([])
+
+
+  const fetchImages = async () => {
     try {
       const res = await fetch('http://localhost:3000/api/images')
       const data = await res.json()
@@ -53,106 +58,165 @@ const fetchImages = async () => {
     }
   }
 
-return (
+  const toggleSelection = (filename) => {
+    setSelectedImages(prev => {
+      if (prev.includes(filename)) {
+        return prev.filter(name => name !== filename)
+      } else {
+        return [...prev, filename]
+      }
+    })
+  }
+  const handleDownloadSelected = () => {
+    if (selectedImages.length === 0) return
+    const url = `http://localhost:3000/api/download-zip?files=${selectedImages.join(',')}`
+    window.location.href = url
+  }
+  const filteredImages = images.filter(img => {
+    if (filterType === 'all') return true
+    if (filterType === 'tif') return img.type === 'tif'
+    if (filterType === 'jpg') return img.name.toLowerCase().match(/\.(jpg|jpeg)$/)
+    if (filterType === 'png') return img.name.toLowerCase().match(/\.png$/)
+    return true
+  })
+
+  return (
     <div style={{ padding: '30px', color: '#333', fontFamily: 'sans-serif', height: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-      {/* 顶部：上传控制区 */}
+      {/* 顶部控制面板 */}
       <div style={{ padding: '20px', background: '#f5f5f5', borderRadius: '8px', marginBottom: '20px', flexShrink: 0 }}>
         <h2 style={{margin: '0 0 15px 0'}}>Voyis Gallery Manager</h2>
 
-        {/* 按钮行 */}
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        {/* 按钮与过滤器行 */}
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+
+          {/* 上传按钮 */}
           <label style={{
             background: isUploading ? '#ccc' : '#2196F3', color: 'white', padding: '10px 20px',
-            borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'inline-block'
+            borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center'
           }}>
-            {isUploading ? 'Uploading...' : '+ Upload Images'}
+            {isUploading ? 'Uploading...' : '☁️ Upload Images'}
             <input type="file" multiple accept=".jpg,.jpeg,.png,.tif,.tiff" onChange={handleFileUpload} style={{ display: 'none' }} />
           </label>
+
+          {/* 分隔符 */}
+          <div style={{ width: '1px', height: '30px', background: '#ccc' }}></div>
+
+          {/* 过滤器 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontWeight: '500' }}>Filter:</span>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+            >
+              <option value="all">All Types</option>
+              <option value="jpg">JPG / JPEG</option>
+              <option value="png">PNG</option>
+              <option value="tif">TIF / TIFF</option>
+            </select>
+          </div>
+
+          {/* 下载按钮 (仅当有选中时显示) */}
+          {selectedImages.length > 0 && (
+             <button
+               onClick={handleDownloadSelected}
+               style={{
+                 background: '#4CAF50', color: 'white', border: 'none', padding: '10px 20px',
+                 borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', marginLeft: 'auto'
+               }}
+             >
+               ⬇️ Download Selected ({selectedImages.length})
+             </button>
+          )}
+
         </div>
 
-        {/* --- 新增：详细上传反馈区域 (位于按钮下方) --- */}
+        {/* 上传状态反馈 (保留之前的逻辑) */}
         {uploadStatus && (
           <div style={{
             marginTop: '15px',
-            padding: '15px',
+            padding: '10px 15px',
             borderRadius: '6px',
-            background: uploadStatus.error ? '#ffebee' : '#e8f5e9', // 成功绿/失败红背景
+            background: uploadStatus.error ? '#ffebee' : '#e8f5e9',
             border: `1px solid ${uploadStatus.error ? '#ffcdd2' : '#c8e6c9'}`,
-            color: '#333',
             fontSize: '14px'
           }}>
             {uploadStatus.error ? (
-              <div style={{ color: '#d32f2f', fontWeight: 'bold' }}>⚠️ Error: {uploadStatus.error}</div>
+              <span style={{ color: '#d32f2f' }}>⚠️ Error: {uploadStatus.error}</span>
             ) : (
-              <div>
-                {/* 统计数据行 */}
-                <div style={{ display: 'flex', gap: '20px', marginBottom: '10px', fontWeight: '500' }}>
-                  <span>📊 Total Files: <strong>{uploadStatus.totalFiles}</strong></span>
-                  <span>💾 Total Size: <strong>{uploadStatus.totalSize}</strong></span>
-                  {/* 只有当有损坏文件时才显示红色，否则绿色 */}
-                  <span style={{ color: uploadStatus.corruptedCount > 0 ? 'red' : 'green' }}>
-                    {uploadStatus.corruptedCount > 0 ? '❌' : '✅'} Corrupted: <strong>{uploadStatus.corruptedCount}</strong>
-                  </span>
-                </div>
-
-                {/* 文件名列表 (折叠面板) */}
-                <details style={{ cursor: 'pointer', borderTop: '1px solid #ccc', paddingTop: '5px' }}>
-                  <summary style={{ outline: 'none', color: '#555' }}>View Uploaded Filenames</summary>
-                  <ul style={{
-                    marginTop: '5px',
-                    maxHeight: '100px',
-                    overflowY: 'auto',
-                    paddingLeft: '20px',
-                    margin: '5px 0 0 0',
-                    background: 'rgba(255,255,255,0.5)'
-                  }}>
-                    {uploadStatus.fileList && uploadStatus.fileList.map((name, i) => (
-                      <li key={i} style={{ fontFamily: 'monospace', fontSize: '12px' }}>{name}</li>
-                    ))}
-                  </ul>
-                </details>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                 <span>✅ Upload Complete</span>
+                 <span>📊 Files: <strong>{uploadStatus.totalFiles}</strong></span>
+                 <span>❌ Corrupted: <strong>{uploadStatus.corruptedCount}</strong></span>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* 底部：图库展示区 (Gallery Viewer) */}
+      {/* 底部：图库展示区 */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        <h3 style={{ borderBottom: '1px solid #ddd', paddingBottom: '10px' }}>Gallery ({images.length})</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #ddd', paddingBottom: '10px', marginBottom: '15px' }}>
+          <h3 style={{ margin: 0 }}>Gallery ({filteredImages.length} visible)</h3>
+          <span style={{ color: '#666', fontSize: '14px' }}>
+            {selectedImages.length > 0 ? `${selectedImages.length} images selected` : 'Click images to select'}
+          </span>
+        </div>
 
-        {images.length === 0 ? (
-          <p style={{ color: '#999' }}>No images found on server.</p>
+        {filteredImages.length === 0 ? (
+          <p style={{ color: '#999', textAlign: 'center', marginTop: '50px' }}>No images match current filter.</p>
         ) : (
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
             gap: '15px'
           }}>
-            {images.map((img, idx) => (
-              <div key={idx} style={{
-                border: '1px solid #ddd', borderRadius: '8px', overflow: 'hidden',
-                background: 'white', boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-              }}>
-                <div style={{ height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eee' }}>
-                  {img.type === 'tif' ? (
-                    <div style={{ textAlign: 'center', color: '#666' }}>
-                      <span style={{ fontSize: '24px' }}>📄</span><br/>TIF File
-                    </div>
-                  ) : (
-                    <img
-                      src={img.url}
-                      alt={img.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
+            {filteredImages.map((img) => {
+              const isSelected = selectedImages.includes(img.name)
+              return (
+                <div
+                  key={img.id}
+                  onClick={() => toggleSelection(img.name)}
+                  style={{
+                    border: isSelected ? '3px solid #2196F3' : '1px solid #ddd', // 选中高亮
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    background: 'white',
+                    boxShadow: isSelected ? '0 4px 8px rgba(33, 150, 243, 0.3)' : '0 2px 5px rgba(0,0,0,0.1)',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {/* 选中时的勾选图标 */}
+                  {isSelected && (
+                    <div style={{
+                      position: 'absolute', top: '5px', right: '5px',
+                      background: '#2196F3', color: 'white', borderRadius: '50%',
+                      width: '20px', height: '20px', textAlign: 'center', lineHeight: '20px', fontSize: '12px'
+                    }}>✓</div>
                   )}
+
+                  <div style={{ height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eee' }}>
+                    {img.type === 'tif' ? (
+                      <div style={{ textAlign: 'center', color: '#666' }}>
+                        <span style={{ fontSize: '24px' }}>📄</span><br/>TIF File
+                      </div>
+                    ) : (
+                      <img
+                        src={img.url}
+                        alt={img.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    )}
+                  </div>
+                  <div style={{ padding: '8px', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', background: isSelected ? '#e3f2fd' : 'white' }}>
+                    {img.name}
+                  </div>
                 </div>
-                <div style={{ padding: '8px', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {img.name}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
