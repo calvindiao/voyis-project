@@ -1,0 +1,420 @@
+/* App.css - Modern Light Theme (Clean & Professional) */
+:root {
+  /* Voyis Yellow */
+  --primary: #FFB902;
+  --primary-hover: #ffc83d;
+
+  /* Light Theme Colors */
+  --bg-app: #f4f6f8;       /* 整体背景：极浅的灰 */
+  --bg-panel: #ffffff;     /* 面板背景：纯白 */
+  --bg-hover: #f9fafb;     /* 悬停背景 */
+
+  --text-main: #2d3748;    /* 深灰，接近黑，比纯黑柔和 */
+  --text-secondary: #718096; /* 浅灰文字 */
+
+  --border-color: #e2e8f0; /* 极淡的边框 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
+  --danger: #e53e3e;
+  --success: #38a169;
+
+  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* 确保整窗高度可用 */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: var(--font-stack);
+  overflow: hidden;
+}
+
+/* 布局框架 */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* === 左侧侧边栏 (Sidebar) === */
+.sidebar {
+  width: 320px;
+  min-width: 280px;
+  background-color: var(--bg-panel);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  z-index: 20;
+  box-shadow: var(--shadow-sm);
+}
+
+.brand-header {
+  margin-bottom: 30px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a202c;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+}
+
+/* 卡片样式 */
+.status-card {
+  background: #f8fafc; /* 微灰背景，区分纯白 */
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.status-card.error {
+  background: #fff5f5;
+  border-color: var(--danger);
+  color: #c53030;
+}
+
+.card-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  margin-bottom: 12px;
+}
+
+.status-card.error .card-title {
+  color: var(--danger);
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+.stat-val {
+  font-weight: 600;
+  font-family: 'Consolas', monospace;
+}
+
+/* 按钮样式 */
+.action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.btn {
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: #1a202c; /* 黄底黑字 */
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.btn-secondary:hover {
+  border-color: #cbd5e0;
+  background-color: #f7fafc;
+}
+
+.btn-outline-danger {
+  background: white;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+
+/* 过滤器 */
+.filter-select {
+  width: 100%;
+  padding: 10px;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-main);
+  outline: none;
+}
+
+/* === 日志区域 (现代化 Feed 风格) === */
+.log-container {
+  flex: 1; /* 占满剩余空间 */
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: auto;
+}
+
+.log-header {
+  padding: 10px 15px;
+  background: #edf2f7;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.log-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+/* 每一条日志像一个小气泡 */
+.log-item {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: white;
+  border: 1px solid transparent;
+  font-size: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  line-height: 1.4;
+}
+
+.log-item.info {
+  border-left: 3px solid #4299e1;
+}
+
+.log-item.success {
+  border-left: 3px solid var(--success);
+}
+
+.log-item.warning {
+  border-left: 3px solid var(--primary);
+}
+
+.log-item.error {
+  border-left: 3px solid var(--danger);
+  background: #fff5f5;
+}
+
+.log-time {
+  display: block;
+  font-size: 10px;
+  color: #a0aec0;
+  margin-bottom: 2px;
+}
+
+/* === 右侧主区域 === */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-app);
+  position: relative;
+  overflow: hidden; /* 由内部容器滚动 */
+}
+
+/* 顶部 Tab 导航（仅 Gallery 模式） */
+.top-nav {
+  height: 60px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  justify-content: space-between;
+  flex-shrink: 0; /* 防止被压缩 */
+}
+
+.nav-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.nav-badge {
+  background: #edf2f7;
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+/* === Gallery（用 Flex） === */
+.gallery-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  justify-content: center;   /* 内容整体居中 */
+  align-items: flex-start;
+}
+
+.gallery-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  width: 100%;
+  max-width: 1200px;          /* 限制最大宽度，窗口再大也不会拉太散 */
+  align-content: flex-start;
+}
+
+/* 每个卡片保持一个比较稳定的宽度 */
+.img-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+  flex: 0 1 220px;            /* 基准宽度约 220px，允许收缩/换行 */
+  max-width: 260px;
+}
+
+.img-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.img-card.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(255, 185, 2, 0.2);
+}
+
+.img-thumb {
+  height: 150px;
+  width: 100%;
+  object-fit: cover;
+  background: #edf2f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.img-meta {
+  padding: 10px 12px;
+}
+
+.img-name {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-main);
+}
+
+.img-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* === Workspace / Editor === */
+.workspace-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.workspace-toolbar {
+  height: 56px;
+  background: white;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.back-btn {
+  background: transparent;
+  border: none;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+}
+
+.back-btn:hover {
+  color: var(--text-main);
+}
+
+.editor-area {
+  flex: 1;
+  background: #f1f3f5; /* 画布背景稍深一点，突显图片 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;      /* 图片太大时可滚动 */
+  position: relative;
+
+  /* 棋盘格背景 */
+  background-image:
+    linear-gradient(45deg, #e6e8eb 25%, transparent 25%),
+    linear-gradient(-45deg, #e6e8eb 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e6e8eb 75%),
+    linear-gradient(-45deg, transparent 75%, #e6e8eb 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
