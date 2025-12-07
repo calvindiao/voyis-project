@@ -1,18 +1,17 @@
-/* App.css - Modern Light Theme (Clean & Professional) */
 :root {
   /* Voyis Yellow */
   --primary: #FFB902;
   --primary-hover: #ffc83d;
 
-  /* Light Theme Colors */
-  --bg-app: #f4f6f8;       /* 整体背景：极浅的灰 */
-  --bg-panel: #ffffff;     /* 面板背景：纯白 */
-  --bg-hover: #f9fafb;     /* 悬停背景 */
+  /* Light Theme */
+  --bg-app: #f4f6f8;
+  --bg-panel: #ffffff;
+  --bg-hover: #f9fafb;
 
-  --text-main: #2d3748;    /* 深灰，接近黑，比纯黑柔和 */
-  --text-secondary: #718096; /* 浅灰文字 */
+  --text-main: #2d3748;
+  --text-secondary: #718096;
 
-  --border-color: #e2e8f0; /* 极淡的边框 */
+  --border-color: #e2e8f0;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 
@@ -26,7 +25,6 @@
   box-sizing: border-box;
 }
 
-/* 确保整窗高度可用 */
 html,
 body,
 #root {
@@ -42,7 +40,6 @@ body {
   overflow: hidden;
 }
 
-/* 布局框架 */
 .app-container {
   display: flex;
   height: 100vh;
@@ -50,7 +47,7 @@ body {
   overflow: hidden;
 }
 
-/* === 左侧侧边栏 (Sidebar) === */
+/* ===  Sidebar === */
 .sidebar {
   width: 320px;
   min-width: 280px;
@@ -61,6 +58,8 @@ body {
   padding: 24px;
   z-index: 20;
   box-shadow: var(--shadow-sm);
+  max-height: 100vh;
+  overflow-y: auto;
 }
 
 .brand-header {
@@ -73,16 +72,15 @@ body {
   gap: 8px;
 }
 
-.brand-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--primary);
-  border-radius: 50%;
+.brand-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  border-radius: 4px;
 }
 
-/* 卡片样式 */
 .status-card {
-  background: #f8fafc; /* 微灰背景，区分纯白 */
+  background: #f8fafc;
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 16px;
@@ -146,7 +144,7 @@ body {
 
 .btn-primary {
   background-color: var(--primary);
-  color: #1a202c; /* 黄底黑字 */
+  color: #1a202c;
 }
 
 .btn-primary:hover {
@@ -177,7 +175,7 @@ body {
   color: var(--danger);
 }
 
-/* 过滤器 */
+/* filter */
 .filter-select {
   width: 100%;
   padding: 10px;
@@ -189,9 +187,9 @@ body {
   outline: none;
 }
 
-/* === 日志区域 (现代化 Feed 风格) === */
+/* === log === */
 .log-container {
-  flex: 1; /* 占满剩余空间 */
+  flex: 1;
   display: flex;
   flex-direction: column;
   background: #f8fafc;
@@ -216,56 +214,63 @@ body {
 .log-body {
   flex: 1;
   overflow-y: auto;
-  padding: 10px;
+  padding: 6px 10px;
 }
 
-/* 每一条日志像一个小气泡 */
 .log-item {
-  margin-bottom: 8px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: white;
-  border: 1px solid transparent;
-  font-size: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  display: flex;
+  align-items: baseline;
+  font-size: 11px;
   line-height: 1.4;
+  padding: 2px 0;
+  border-bottom: 1px solid #edf2f7;
+  background: transparent;
+  box-shadow: none;
+  margin: 0;
 }
 
-.log-item.info {
-  border-left: 3px solid #4299e1;
-}
-
-.log-item.success {
-  border-left: 3px solid var(--success);
-}
-
-.log-item.warning {
-  border-left: 3px solid var(--primary);
-}
-
-.log-item.error {
-  border-left: 3px solid var(--danger);
-  background: #fff5f5;
-}
 
 .log-time {
-  display: block;
   font-size: 10px;
   color: #a0aec0;
-  margin-bottom: 2px;
+  margin-right: 8px;
+  white-space: nowrap;
 }
 
-/* === 右侧主区域 === */
+.log-msg {
+  flex: 1;
+  word-break: break-word;
+}
+
+.log-item.info .log-msg {
+  color: #a0aec0;        /* grey：general */
+}
+
+.log-item.success .log-msg {
+  color: var(--success); /* green：success */
+}
+
+.log-item.warning .log-msg {
+  color: #b7791f;        /* orange：warning */
+}
+
+.log-item.error .log-msg {
+  color: var(--danger);  /* red：error */
+  font-weight: 600;
+}
+
+
+/* === right main area === */
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   background-color: var(--bg-app);
   position: relative;
-  overflow: hidden; /* 由内部容器滚动 */
+  overflow: hidden;
 }
 
-/* 顶部 Tab 导航（仅 Gallery 模式） */
+/* tab（only Gallery ） */
 .top-nav {
   height: 60px;
   background: var(--bg-panel);
@@ -274,7 +279,7 @@ body {
   align-items: center;
   padding: 0 24px;
   justify-content: space-between;
-  flex-shrink: 0; /* 防止被压缩 */
+  flex-shrink: 0;
 }
 
 .nav-title {
@@ -291,14 +296,27 @@ body {
   margin-left: 8px;
   font-weight: normal;
 }
+.nav-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(255, 185, 2, 0.12);
+  color: #b7791f;
+  border: 1px solid rgba(255, 185, 2, 0.7);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
 
-/* === Gallery（用 Flex） === */
+/* === Gallery（Flex） === */
 .gallery-container {
   flex: 1;
   overflow-y: auto;
   padding: 24px;
   display: flex;
-  justify-content: center;   /* 内容整体居中 */
+  justify-content: center;
   align-items: flex-start;
 }
 
@@ -307,11 +325,10 @@ body {
   flex-wrap: wrap;
   gap: 20px;
   width: 100%;
-  max-width: 1200px;          /* 限制最大宽度，窗口再大也不会拉太散 */
+  max-width: 1200px;          /* limit max width, won't stretch too much on large screens */
   align-content: flex-start;
 }
 
-/* 每个卡片保持一个比较稳定的宽度 */
 .img-card {
   background: white;
   border-radius: 12px;
@@ -321,7 +338,7 @@ body {
   transition: all 0.2s;
   cursor: pointer;
   position: relative;
-  flex: 0 1 220px;            /* 基准宽度约 220px，允许收缩/换行 */
+  flex: 0 1 220px;
   max-width: 260px;
 }
 
@@ -402,14 +419,13 @@ body {
 
 .editor-area {
   flex: 1;
-  background: #f1f3f5; /* 画布背景稍深一点，突显图片 */
+  background: #f1f3f5;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: auto;      /* 图片太大时可滚动 */
+  overflow: auto;
   position: relative;
 
-  /* 棋盘格背景 */
   background-image:
     linear-gradient(45deg, #e6e8eb 25%, transparent 25%),
     linear-gradient(-45deg, #e6e8eb 25%, transparent 25%),

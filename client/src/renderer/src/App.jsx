@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import './App.css';
+import voyisLogo from './assets/voyis-logo.png';
 
 function App() {
 
@@ -207,8 +208,8 @@ function App() {
       {/* === LEFT SIDEBAR === */}
       <div className="sidebar">
         <div className="brand-header">
-          <div className="brand-dot"></div>
-          VOYIS EDITOR
+          <img src={voyisLogo} alt="Voyis logo" className="brand-logo" />
+          VOYIS MiniProject
         </div>
 
         {/* Global Stats */}
@@ -223,8 +224,8 @@ function App() {
             <span className="stat-val">{stats.totalSizeMB} MB</span>
           </div>
           <div className="stat-row" style={{ color: stats.corrupted > 0 ? 'var(--danger)' : 'var(--success)' }}>
-            <span>Integrity</span>
-            <span className="stat-val">{stats.corrupted > 0 ? `${stats.corrupted} Issues` : 'Stable'}</span>
+            <span>Corrupted Images</span>
+            <span className="stat-val">{stats.corrupted > 0 ? `${stats.corrupted}` : 'Stable'}</span>
           </div>
           <div style={{ fontSize: '11px', color: '#a0aec0', marginTop: '10px', textAlign: 'right' }}>
             Last Sync: {lastSynced || '--'}
@@ -256,7 +257,7 @@ function App() {
         {/* Controls */}
         <div className="action-group">
           <label className={`btn btn-primary ${isUploading ? 'disabled' : ''}`}>
-            {isUploading ? 'Processing...' : 'Upload New Batch'}
+            {isUploading ? 'Processing...' : 'Upload New Images'}
             <input
               type="file"
               multiple
@@ -270,7 +271,7 @@ function App() {
           <button
             className="btn btn-secondary"
             onClick={() => { addLog("Sync triggered.", 'info'); fetchImages(); }}>
-            Sync Data
+            Sync with Server (Server wins)
           </button>
 
           <div style={{ marginTop: '10px' }}>
@@ -320,7 +321,7 @@ function App() {
             {logs.map((log, idx) => (
               <div key={idx} className={`log-item ${log.type}`}>
                 <span className="log-time">{log.time}</span>
-                {log.msg}
+                <span className="log-msg">{log.msg}</span>
               </div>
             ))}
             <div ref={logsEndRef} />
@@ -339,8 +340,9 @@ function App() {
                 <span className="nav-title">Image Gallery</span>
                 <span className="nav-badge">{filteredImages.length}</span>
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                Double-click to edit
+              <div className="nav-hint">
+                <span className="nav-hint-dot" />
+                <span>Double click to crop</span>
               </div>
             </div>
             <div className="gallery-container">
@@ -413,7 +415,7 @@ function App() {
                     className={isCropMode ? "btn btn-outline-danger" : "btn btn-secondary"}
                     style={{ padding: '6px 12px', fontSize: '12px' }}
                     onClick={() => { setIsCropMode(!isCropMode); setSelection(null); }}>
-                    {isCropMode ? 'Cancel Crop' : 'Crop Tool'}
+                    {isCropMode ? 'Cancel Crop' : 'Crop Image'}
                   </button>
                 )}
                 {isCropMode && (
