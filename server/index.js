@@ -1,11 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const path = require('path');
+const sharp = require('sharp');
+
 const { Pool } = require('pg');
 const fs = require('fs');
+
 const app = express();
 const port = 3000;
+const path = require('path');
 
 const IMAGES_DIR = path.join(__dirname, 'images_storage');
 
@@ -64,22 +67,40 @@ app.get('/api/status', async (req, res) => {
 });
 
 
-app.post('/api/upload', upload.array('images'), (req, res) => {
+app.post('/api/upload', upload.array('images'), async (req, res) => {
   try {
     const files = req.files;
 
     if (!files || files.length === 0) {
       return res.status(400).send('No files uploaded.');
     }
+    let corruptedCount = 0;
+    const processedFiles = [];
+
+
+
+  await Promise.all(files.map(async (file) => {
+        try {
+          await sharp(file.path).metadata();
+        } catch (err) {
+          console.error(`Corrupted file detected: ${file.originalname}`, err.message);
+          corruptedCount++;
+          fs.unlinkSync(file.path); // Delete corrupted file
+        }
+        processedFiles.push(file.filename);
+      }));
+
 
     // Calculate statistics
     const totalSize = files.reduce((acc, file) => acc + file.size, 0);
 
     res.json({
+      success: true,
       message: 'Upload successful!',
       totalFiles: files.length,
+      corruptedCount: corruptedCount,
       totalSize: (totalSize / 1024 / 1024).toFixed(2) + ' MB', // Convert to MB
-      fileList: files.map(f => f.filename)
+      fileList: processedFiles
     });
 
   } catch (error) {
