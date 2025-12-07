@@ -49,8 +49,6 @@ const initDb = async () => {
 initDb();
 
 
-
-
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, IMAGES_DIR);
@@ -115,8 +113,6 @@ app.get('/api/images', async (req, res) => {
 });
 
 
-
-
 app.post('/api/upload', upload.array('images'), async (req, res) => {
   try {
     const files = req.files;
@@ -167,7 +163,7 @@ app.post('/api/upload', upload.array('images'), async (req, res) => {
         processedFiles.push(file.filename);
       } catch (dbErr) {
         console.error("DB Insert Failed:", dbErr);
-        // 这里可以选择是否要把文件删掉，或者记录错误
+          // todo: handle cleanup here if needed
       }
     }));
 
@@ -223,6 +219,62 @@ app.get('/api/download-zip', (req, res) => {
     }
   });
   archive.finalize();
+});
+
+app.post('/api/crop', async (req, res) => {
+  const { filename, x, y, width, height } = req.body;
+
+
+  if (!filename || width <= 0 || height <= 0) {
+    return res.status(400).json({ error: 'Invalid parameters' });
+  }
+
+  const originalPath = path.join(IMAGES_DIR, filename);
+
+  const timestamp = Date.now();
+  const ext = path.extname(filename); // .jpg
+  const nameBody = path.basename(filename, ext); // original
+  const newFilename = `${nameBody}_crop_${timestamp}${ext}`;
+  const newPath = path.join(IMAGES_DIR, newFilename);
+
+  try {
+
+    await sharp(originalPath)
+      .extract({
+        left: parseInt(x),
+        top: parseInt(y),
+        width: parseInt(width),
+        height: parseInt(height)
+      })
+      .toFile(newPath);
+
+    const metadata = await sharp(newPath).metadata();
+
+    // database insert
+    const insertQuery = `
+      INSERT INTO images (filename, path, type, size, width, height, is_corrupted)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id;
+    `;
+
+    const values = [
+      newFilename,
+      newPath,
+      `image/${metadata.format}`, // Simplified mimetype
+      metadata.size,
+      metadata.width,
+      metadata.height,
+      false
+    ];
+
+    await pool.query(insertQuery, values);
+
+    res.json({ success: true, message: 'Crop successful', newFilename });
+
+  } catch (error) {
+    console.error('Crop error:', error);
+    res.status(500).json({ error: 'Crop failed: ' + error.message });
+  }
 });
 
 app.listen(port, () => {
