@@ -129,7 +129,7 @@ app.post('/api/upload', upload.array('images'), async (req, res) => {
       let height = null;
       let isCorrupted = false;
 
-      // 1. use Sharp to get image metadata
+      // get image metadata
       try {
         const metadata = await sharp(file.path).metadata();
         width = metadata.width;
@@ -140,7 +140,7 @@ app.post('/api/upload', upload.array('images'), async (req, res) => {
         corruptedCount++;
       }
 
-      // 2. SQL insert statement
+      // SQL insert statement
       const insertQuery = `
         INSERT INTO images (filename, path, type, size, width, height, is_corrupted)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -157,7 +157,6 @@ app.post('/api/upload', upload.array('images'), async (req, res) => {
         isCorrupted          // is_corrupted
       ];
 
-      // 3. Execute insert
       try {
         await pool.query(insertQuery, values);
         processedFiles.push(file.filename);
