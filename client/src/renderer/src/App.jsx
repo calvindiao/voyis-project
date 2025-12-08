@@ -1,10 +1,91 @@
 import { useState, useEffect, useRef } from 'react'
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { applyGrayscaleWasm } from './wasm/filtersClient';
+import * as UTIF from 'utif';
 import './App.css';
 import voyisLogo from './assets/voyis-logo.png';
 
-function App() {
+function TiffCanvas({ src }) {
+  const canvasRef = useRef(null);
+  const [status, setStatus] = useState('loading'); // 'loading' | 'ok' | 'error'
+  const [error, setError] = useState(null);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function decodeTif() {
+      try {
+        setStatus('loading');
+        setError(null);
+
+        //pull in TIF decode logic
+        const res = await fetch(src);
+        const buffer = await res.arrayBuffer();
+
+        // use UTIF to decode
+        const ifds = UTIF.decode(buffer);
+        if (!ifds || ifds.length === 0) {
+          throw new Error('No image data found in TIF file');
+        }
+
+        UTIF.decodeImage(buffer, ifds[0]);
+        const rgba = UTIF.toRGBA8(ifds[0]);
+        const { width, height } = ifds[0];
+
+        // Draw to canvas
+        const canvas = canvasRef.current;
+        if (!canvas || cancelled) return;
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        const imageData = new ImageData(new Uint8ClampedArray(rgba), width, height);
+        ctx.putImageData(imageData, 0, 0);
+
+        setStatus('ok');
+      } catch (err) {
+        console.error('TIF decode failed:', err);
+        if (!cancelled) {
+          setError(err.message || String(err));
+          setStatus('error');
+        }
+      }
+    }
+
+    decodeTif();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [src]);
+
+  return (
+    <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+      {status === 'loading' && (
+        <p style={{ marginBottom: '10px', color: '#a0aec0' }}>Decoding TIF...</p>
+      )}
+      <canvas
+        ref={canvasRef}
+        style={{
+          maxWidth: '90%',
+          maxHeight: '90%',
+          backgroundColor: '#1a202c',
+          border: '1px solid #4a5568',
+        }}
+      />
+      {status === 'error' && (
+        <p style={{ marginTop: '10px', color: '#fc8181' }}>
+          Decode failed: {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+
+function App() {
+  console.log('>>> App rendered');
   const [images, setImages] = useState([]);
   const [lastSynced, setLastSynced] = useState(null);
 
@@ -21,6 +102,8 @@ function App() {
   const [selection, setSelection] = useState(null); // { x, y, width, height }
   const [isDragging, setIsDragging] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+
+  const [isWasmBusy, setIsWasmBusy] = useState(false);
 
   const imgRef = useRef(null); // calculate crop area based on image position
   const logsEndRef = useRef(null);
@@ -194,6 +277,70 @@ function App() {
     }
   };
 
+  const handleApplyWasmGrayAndSave = async () => {
+    if (!activeImage || activeImage.type === 'tif') return;
+
+    try {
+      setIsWasmBusy(true);
+      addLog(`WASM grayscale on ${activeImage.name}...`, 'info');
+
+        // create <img> and <canvas>
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = activeImage.url;
+
+      await new Promise((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Image load failed'));
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      // get RGBA pixels and pass to WASM
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      await applyGrayscaleWasm(imageData.data);  // <- call WASM
+      ctx.putImageData(imageData, 0, 0);
+
+      // export processed canvas as PNG Blob
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob((b) => {
+          if (!b) return reject(new Error('Failed to create blob from canvas'));
+          resolve(b);
+        }, 'image/png');
+      });
+
+        // upload via /api/upload endpoint
+      const base = activeImage.name.replace(/\.[^.]+$/, '');
+      const newFilename = `${base}_gray_wasm.png`;
+
+      const formData = new FormData();
+      formData.append('images', blob, newFilename);
+
+      const res = await fetch('http://localhost:3000/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error(`Upload failed: ${res.statusText}`);
+      }
+
+      addLog(`WASM grayscale saved as ${newFilename}`, 'success');
+      fetchImages();
+
+    } catch (err) {
+      console.error(err);
+      addLog(`WASM grayscale failed: ${err.message}`, 'error');
+      alert(`WASM processing failed: ${err.message}`);
+    } finally {
+      setIsWasmBusy(false);
+    }
+  };
+
   const filteredImages = images.filter(img => {
     if (filterType === 'all') return true
     if (filterType === 'tif') return img.type === 'tif'
@@ -201,7 +348,6 @@ function App() {
     if (filterType === 'png') return img.name.toLowerCase().match(/\.png$/)
     return true
   })
-
 
   return (
     <div className="app-container">
@@ -380,9 +526,9 @@ function App() {
                           {img.type === 'tif'
                             ? <span>TIF File</span>
                             : <img
-                                src={img.url}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                              />
+                              src={img.url}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
                           }
                         </div>
                         <div className="img-meta">
@@ -399,7 +545,7 @@ function App() {
         ) : (
           /* --- WORKSPACE VIEW (Fixed Layout) --- */
           <div className="workspace-container">
-            {/* Toolbar - Top Fixed Height */}
+            {/* Toolbar */}
             <div className="workspace-toolbar">
               <button className="back-btn" onClick={closeEditor}>
                 <span>←</span> Back to Gallery
@@ -411,20 +557,39 @@ function App() {
 
               <div style={{ display: 'flex', gap: 10 }}>
                 {activeImage.type !== 'tif' && (
-                  <button
-                    className={isCropMode ? "btn btn-outline-danger" : "btn btn-secondary"}
-                    style={{ padding: '6px 12px', fontSize: '12px' }}
-                    onClick={() => { setIsCropMode(!isCropMode); setSelection(null); }}>
-                    {isCropMode ? 'Cancel Crop' : 'Crop Image'}
-                  </button>
-                )}
-                {isCropMode && (
-                  <button
-                    className="btn btn-primary"
-                    style={{ padding: '6px 12px', fontSize: '12px' }}
-                    onClick={handleSaveCrop}>
-                    Save Crop
-                  </button>
+                  <>
+                    <button
+                      className={isCropMode ? "btn btn-outline-danger" : "btn btn-secondary"}
+                      style={{ padding: '6px 12px', fontSize: '12px' }}
+                      onClick={() => { setIsCropMode(!isCropMode); setSelection(null); }}
+                    >
+                      {isCropMode ? 'Cancel Crop' : 'Crop Image'}
+                    </button>
+
+                    {isCropMode && (
+                      <button
+                        className="btn btn-primary"
+                        style={{ padding: '6px 12px', fontSize: '12px' }}
+                        onClick={handleSaveCrop}
+                      >
+                        Save Crop
+                      </button>
+                    )}
+
+                    <button
+                      className="btn btn-secondary"
+                      disabled={isWasmBusy}
+                      onClick={handleApplyWasmGrayAndSave}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        opacity: isWasmBusy ? 0.6 : 1,
+                        cursor: isWasmBusy ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {isWasmBusy ? 'WASM Processing…' : 'WASM Grayscale + Save'}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -432,9 +597,7 @@ function App() {
             {/* Canvas - Fills remaining space */}
             <div className="editor-area">
               {activeImage.type === 'tif' ? (
-                <div style={{ textAlign: 'center', color: '#a0aec0' }}>
-                  <p>TIF Preview Not Supported in Browser</p>
-                </div>
+                <TiffCanvas src={activeImage.url} />
               ) : isCropMode ? (
                 <div
                   style={{

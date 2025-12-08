@@ -54,8 +54,19 @@ const storage = multer.diskStorage({
     cb(null, IMAGES_DIR);
   },
   filename: function (req, file, cb) {
-    file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
-    cb(null, file.originalname);
+    try {
+      const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+
+      const ext = path.extname(originalName);
+      const base = path.basename(originalName, ext);
+      const timestamp = Date.now();
+      const finalName = `${base}_${timestamp}${ext}`;
+
+      cb(null, finalName);
+    } catch (err) {
+      console.error('multer filename error:', err);
+      cb(err);
+    }
   }
 });
 

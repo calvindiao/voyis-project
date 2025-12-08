@@ -119,7 +119,7 @@ body {
   font-family: 'Consolas', monospace;
 }
 
-/* 按钮样式 */
+/* button style */
 .action-group {
   display: flex;
   flex-direction: column;
