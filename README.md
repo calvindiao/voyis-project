@@ -18,6 +18,8 @@ The app focuses on:
 - Electron + [electron-vite](https://github.com/alex8088/electron-vite) for dev/build pipeline
 - React (hooks) for UI and state management
 - `react-zoom-pan-pinch` for pan/zoom interactions in the single-image viewer
+- `utif.js` for client-side TIF decoding into RGBA and drawing into `<canvas>`.
+- A small Rust + WebAssembly image filter module (via `wasm-bindgen`) used for high‑performance grayscale conversion.
 
 **Backend**
 
@@ -114,8 +116,8 @@ npm run dev
 
 ### Testing
 
-- Use `test` folder or any public image dataset (e.g., sample satellite imagery, maps, or photos).
-- Mixed JPG/PNG/TIF files and some intentionally corrupted images are useful for validating the corrupted-count logic and robustness of the upload path.
+- Use the `test images` folder in the repo or any public image dataset (satellite imagery, maps, scanned documents, etc.).
+- Include a mix of JPG/PNG/TIF files and at least one intentionally corrupted image to validate corrupted‑count logic and robustness of the upload path.
 
 
 
@@ -202,12 +204,24 @@ We can have changes in the following sides:
    - Future plan: support uploading a JSON file describing existing server directories and file patterns; the API would scan those locations and bulk-insert metadata into the `images` table.
 2. **EXIF Data Extraction / Editing**
 3. **WASM / Native Addons**
-   - WASM-based TIF decoder for in-app TIF preview.
+   - Current implementation already uses a small Rust + WASM module for a grayscale filter (`WASM Grayscale + Save` in the workspace).
+   - Future : add more advanced filters and potentially move some heavy TIF processing into WASM as well.
 4. **TIF Preview**
-   - Could be improved with a WASM decoder or by generating preview JPEGs server-side.
+   - TIF preview is implemented using `utif.js` to decode into RGBA and draw onto a `<canvas>`.
+   - Future improvements could include thumbnail caching.
 5. **Authentication / Multi-User**
 
+## Requirements Coverage
 
+| Requirement (from brief)                      | Implementation                                               |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| Upload JPG/PNG/TIF & show upload stats        | `/api/upload` + sidebar **Server Health** & **Last Upload Report** |
+| Detect corrupted images                       | `sharp().metadata()` try/catch + `is_corrupted` flag         |
+| Gallery with filter/selection/batch download  | Center gallery grid + type filter + `Download (N)` ZIP export |
+| Single viewer with pan/zoom/crop to new image | Workspace view + `react-zoom-pan-pinch` + `/api/crop`        |
+| Control panel & sync strategy                 | Left sidebar controls + **Sync with Server (Server wins)** button |
+| Log of actions & feedback                     | **SYSTEM LOGS** panel in the sidebar                         |
+| Optional WASM / native-addon feature          | WASM grayscale filter + TIF preview via UTIF                 |
 
 ## Development Notes
 
